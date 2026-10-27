@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183c32">
+  <title>Paisajes de pertenencia | Obra colectiva</title>
+  <meta name="description" content="Una obra colectiva que se transforma con cada visitante.">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--green:#183c32;--cream:#f6f3eb;--ink:#202923;--muted:#68736b;--line:#dddcd2;--accent:#d5e2b7}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--cream);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}
+    header{background:var(--green);color:#fff;padding:clamp(28px,6vw,76px) 20px 38px}
+    .wrap{max-width:1050px;margin:auto}
+    .eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:.75rem;color:var(--accent);font-weight:700}
+    h1{font-family:Georgia,serif;font-size:clamp(2.5rem,7vw,5rem);line-height:1.02;font-weight:500;margin:12px 0}
+    header p{max-width:640px;color:#e0e9e1;font-size:1.08rem;margin:0}
+    main{max-width:1050px;margin:auto;padding:26px 18px 70px}
+    .grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.8fr);gap:22px;align-items:start}
+    .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:clamp(17px,3vw,26px);box-shadow:0 8px 24px #1d32200a;margin-bottom:20px}
+    h2{font-family:Georgia,serif;font-size:1.8rem;font-weight:500;margin:0 0 7px}
+    .muted{color:var(--muted);font-size:.94rem}
+    .stage{background:#e9e7dd;border-radius:12px;overflow:hidden;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;margin:16px 0}
+    .stage img{width:100%;height:100%;object-fit:contain;display:block}
+    .placeholder{text-align:center;padding:28px;color:#68736b}
+    .placeholder span{font-size:3rem;display:block}
+    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    button,.button{border:0;border-radius:999px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer;background:var(--green);color:white}
+    button.secondary{background:#e9eee5;color:var(--green)}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .progress{height:5px;background:#e6e5dc;border-radius:99px;overflow:hidden;margin:13px 0}
+    .progress>div{height:100%;width:0;background:var(--green);transition:width .2s}
+    .uploadbox{border:1.5px dashed #b7c1b5;border-radius:14px;padding:18px;margin:15px 0;background:#fbfcf8}
+    input[type=file]{width:100%;margin:10px 0}
+    .preview{display:none;width:100%;max-height:220px;object-fit:contain;background:#f0efe9;border-radius:10px;margin-top:12px}
+    .status{font-size:.92rem;margin-top:12px;min-height:1.4em}
+    .status.error{color:#a52e2e}.status.success{color:#21633b}
+    .gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:15px}
+    .thumb{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f1f0e9;cursor:pointer;padding:0}
+    .thumb img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+    .thumb span{display:block;padding:6px;font-size:.75rem;color:var(--muted)}
+    .step{display:flex;gap:12px;margin:15px 0}.num{width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:#e8eddf;color:var(--green);display:grid;place-items:center;font-weight:800}
+    footer{text-align:center;padding:26px;color:var(--muted);font-size:.85rem}
+    .small{font-size:.82rem}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}header{padding-top:36px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Una obra que nos pertenece a todos</div>
+    <h1>Paisajes de<br>pertenencia</h1>
+    <p>Cada persona deja una huella. Mira cómo un lienzo compartido se transforma, una intervención a la vez.</p>
+  </div>
+</header>
+<main>
+  <div class="grid">
+    <section>
+      <div class="card">
+        <h2>La transformación</h2>
+        <p class="muted">Las fotografías se muestran en orden de llegada. Pulsa reproducir para recorrer la historia de la obra.</p>
+        <div class="stage" id="stage">
+          <div class="placeholder"><span>🖼️</span><strong>La obra está por comenzar</strong><br><small>La primera fotografía aparecerá aquí.</small></div>
+        </div>
+        <div class="controls">
+          <button id="playBtn" disabled>▶ Reproducir proceso</button>
+          <button class="secondary" id="prevBtn" disabled aria-label="Fotografía anterior">← Anterior</button>
+          <button class="secondary" id="nextBtn" disabled aria-label="Fotografía siguiente">Siguiente →</button>
+          <span class="muted small" id="counter">0 etapas</span>
+        </div>
+        <div class="progress"><div id="progressFill"></div></div>
+        <p class="muted small" id="stageInfo">Cuando se publique una foto, podrás explorar cada etapa.</p>
+      </div>
+      <div class="card">
+        <h2>Las huellas</h2>
+        <p class="muted">Cada imagen conserva un momento de la creación colectiva.</p>
+        <div id="gallery" class="gallery"><p class="muted">Aún no hay fotografías publicadas.</p></div>
+      </div>
+    </section>
+    <aside>
+      <div class="card">
+        <h2>Deja tu huella</h2>
+        <p class="muted">Después de pintar, toma una fotografía de <strong>todo el lienzo</strong> desde el mismo punto de vista y súbela aquí.</p>
+        <div class="step"><div class="num">1</div><div>Fotografía la obra completa, procurando mantener el encuadre.</div></div>
+        <div class="step"><div class="num">2</div><div>Selecciona la imagen en tu celular.</div></div>
+        <div class="step"><div class="num">3</div><div>Envía la foto y espera la confirmación.</div></div>
+        <form id="uploadForm">
+          <div class="uploadbox">
+            <label for="photo"><strong>Selecciona tu fotografía</strong></label>
+            <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" required>
+            <img id="preview" class="preview" alt="Vista previa de la fotografía seleccionada">
+            <p class="muted small">JPG, PNG o WebP · máximo 5 MB. No incluyas rostros ni información personal.</p>
+          </div>
+          <label style="display:flex;gap:9px;align-items:flex-start;font-size:.9rem">
+            <input id="consent" type="checkbox" required style="margin-top:5px">
+            Confirmo que esta fotografía corresponde a la obra y acepto que se publique en esta página.
+          </label>
+          <button id="submitBtn" type="submit" style="width:100%;margin-top:15px">Subir fotografía</button>
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Sobre esta obra</h2>
+        <p class="muted">Un paisaje común, construido por muchas miradas. Cada fotografía registra un nuevo capítulo de la misma obra.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+<footer>Obra colectiva · Gracias por formar parte del proceso.</footer>
+
+<script>
+  // 1) Reemplaza estos valores por los de tu proyecto Supabase.
+  const SUPABASE_URL = "https://eoihhljqnzaqudofhcnv.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ubwrrLzE7uTCO4dgJITnwA_8mJI3pn6";
+  const BUCKET = "paisaje-fotos";
+  const TABLE = "aportes";
+
+  const configured = SUPABASE_URL.startsWith("https://") &&
+    !SUPABASE_URL.includes("PEGA_AQUI") &&
+    SUPABASE_PUBLISHABLE_KEY !== "PEGA_AQUI_TU_PUBLISHABLE_O_ANON_KEY";
+
+  const client = configured
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+    : null;
+
+  const $ = id => document.getElementById(id);
+  let photos = [], current = 0, playing = false, playTimer = null, channel = null;
+
+  function setStatus(message, type="") {
+    $("status").textContent = message;
+    $("status").className = "status " + type;
+  }
+
+  function showStage(index) {
+    if (!photos.length) return;
+    current = Math.max(0, Math.min(index, photos.length - 1));
+    const photo = photos[current];
+    $("stage").innerHTML = "";
+    const img = document.createElement("img");
+    img.src = photo.url;
+    img.alt = `Etapa ${current + 1} de la obra colectiva`;
+    $("stage").appendChild(img);
+    $("counter").textContent = `${current + 1} / ${photos.length} etapas`;
+    $("stageInfo").textContent = `Etapa ${current + 1} · ${new Date(photo.created_at).toLocaleString("es-PE", {dateStyle:"medium", timeStyle:"short"})}`;
+    $("progressFill").style.width = `${((current + 1) / photos.length) * 100}%`;
+    $("prevBtn").disabled = current === 0;
+    $("nextBtn").disabled = current === photos.length - 1;
+    $("playBtn").disabled = photos.length < 2;
+    $("playBtn").textContent = playing ? "Ⅱ Pausar" : "▶ Reproducir proceso";
+    document.querySelectorAll(".thumb").forEach((el, i) => {
+      el.style.outline = i === current ? "3px solid #183c32" : "none";
+    });
+  }
+
+  function renderGallery() {
+    const gallery = $("gallery");
+    gallery.innerHTML = "";
+    if (!photos.length) {
+      gallery.innerHTML = '<p class="muted">Aún no hay fotografías publicadas.</p>';
+      $("stage").innerHTML = '<div class="placeholder"><span>🖼️</span><strong>La obra está por comenzar</strong><br><small>La primera fotografía aparecerá aquí.</small></div>';
+      $("counter").textContent = "0 etapas";
+      $("playBtn").disabled = $("prevBtn").disabled = $("nextBtn").disabled = true;
+      $("progressFill").style.width = "0";
+      return;
+    }
+    photos.forEach((photo, i) => {
+      const button = document.createElement("button");
+      button.className = "thumb";
+      button.type = "button";
+      button.setAttribute("aria-label", `Ver etapa ${i + 1}`);
+      const img = document.createElement("img");
+      img.src = photo.url;
+      img.alt = `Etapa ${i + 1}`;
+      const label = document.createElement("span");
+      label.textContent = `Etapa ${i + 1}`;
+      button.append(img, label);
+      button.addEventListener("click", () => { stopPlayback(); showStage(i); });
+      gallery.appendChild(button);
+    });
+    showStage(Math.min(current, photos.length - 1));
+  }
+
+  async function loadPhotos() {
+    if (!client) {
+      $("stage").innerHTML = '<div class="placeholder"><span>⚙️</span><strong>Falta configurar la conexión</strong><br><small>Completa la URL y la clave de Supabase en el código.</small></div>';
+      setStatus("Configura primero Supabase siguiendo el README.", "error");
+      return;
+    }
+    const { data, error } = await client.from(TABLE)
+      .select("id, image_url, created_at")
+      .eq("published", true)
+      .order("created_at", {ascending:true});
+    if (error) {
+      console.error(error);
+      setStatus("No se pudo cargar la obra. Revisa la configuración de Supabase.", "error");
+      return;
+    }
+    photos = (data || []).map(row => ({...row, url: row.image_url}));
+    renderGallery();
+  }
+
+  function stopPlayback() {
+    playing = false;
+    if (playTimer) clearInterval(playTimer);
+    playTimer = null;
+    $("playBtn").textContent = "▶ Reproducir proceso";
+  }
+
+  function startPlayback() {
+    if (photos.length < 2) return;
+    if (playing) { stopPlayback(); return; }
+    playing = true;
+    if (current >= photos.length - 1) current = 0;
+    showStage(current);
+    $("playBtn").textContent = "Ⅱ Pausar";
+    playTimer = setInterval(() => {
+      if (current >= photos.length - 1) {
+        stopPlayback();
+        return;
+      }
+      showStage(current + 1);
+    }, 1000);
+  }
+
+  $("playBtn").addEventListener("click", startPlayback);
+  $("prevBtn").addEventListener("click", () => { stopPlayback(); showStage(current - 1); });
+  $("nextBtn").addEventListener("click", () => { stopPlayback(); showStage(current + 1); });
+
+  $("photo").addEventListener("change", () => {
+    const file = $("photo").files[0];
+    const preview = $("preview");
+    if (!file) { preview.style.display = "none"; return; }
+    if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setStatus("Elige un archivo JPG, PNG o WebP de máximo 5 MB.", "error");
+      $("photo").value = "";
+      preview.style.display = "none";
+      return;
+    }
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    setStatus("");
+  });
+
+  $("uploadForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!client) { setStatus("La página todavía no está conectada a Supabase.", "error"); return; }
+    const file = $("photo").files[0];
+    if (!file || !$("consent").checked) { setStatus("Selecciona una foto y acepta las condiciones de publicación.", "error"); return; }
+    if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setStatus("El archivo no cumple el formato o tamaño permitido.", "error"); return;
+    }
+    $("submitBtn").disabled = true;
+    setStatus("Subiendo fotografía…");
+    try {
+      const ext = ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp" })[file.type];
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await client.storage.from(BUCKET).upload(path, file, {
+        contentType: file.type, cacheControl: "3600", upsert: false
+      });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = client.storage.from(BUCKET).getPublicUrl(path);
+      const { error: insertError } = await client.from(TABLE).insert({
+        image_path: path,
+        image_url: urlData.publicUrl,
+        published: true
+      });
+      if (insertError) throw insertError;
+      $("uploadForm").reset();
+      $("preview").style.display = "none";
+      setStatus("¡Fotografía publicada! Gracias por contribuir a la obra.", "success");
+      await loadPhotos();
+    } catch (error) {
+      console.error(error);
+      setStatus("No se pudo publicar la foto. Inténtalo otra vez o avisa al equipo de la exposición.", "error");
+    } finally {
+      $("submitBtn").disabled = false;
+    }
+  });
+
+  async function init() {
+    if (!client) { await loadPhotos(); return; }
+    await loadPhotos();
+    // Actualiza la galería cuando se registra un nuevo aporte.
+    const { data } = await client.auth.getSession();
+    channel = client.channel("aportes-en-tiempo-real")
+      .on("postgres_changes", {event:"INSERT", schema:"public", table:TABLE}, payload => {
+        if (payload.new && payload.new.published) loadPhotos();
+      }).subscribe();
+  }
+  init();
+</script>
+</body>
+</html>
